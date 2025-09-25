@@ -1,0 +1,10 @@
+{
+  "name": "demo",
+  "version": "0.0.1",
+  "dependencies": {
+    "@ctrl/tinycolor": "^4.1.1"
+  },
+  "devDependencies": {
+    "react": "18.2.0"
+  }
+}

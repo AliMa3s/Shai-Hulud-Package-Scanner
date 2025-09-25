@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shai-Hulud Package Scanner</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Shai-Hulud Package Scanner</h1>
+        <p class="tagline">Check npm manifest files against the latest compromised package indicators.</p>
+      </header>
+
+      <section class="panel">
+        <h2>Scan a file</h2>
+        <form id="scan-form" autocomplete="off">
+          <div class="field">
+            <label for="target">package.json or package-lock.json</label>
+            <input type="file" id="target" name="target" accept="application/json,.json" required />
+            <p class="hint">Files are processed locally on this machine; nothing is uploaded off-box.</p>
+          </div>
+
+          <div class="field">
+            <label for="dataset-url">Optional dataset URL</label>
+            <input type="url" id="dataset-url" name="datasetUrl" placeholder="https://example.com/shai-hulud-iocs.json" />
+            <p class="hint">Leave blank to use the bundled list. Provide a direct JSON URL to follow an external feed.</p>
+          </div>
+
+          <button type="submit">Run scan</button>
+        </form>
+      </section>
+
+      <section class="panel" id="results" hidden>
+        <h2>Results</h2>
+        <div id="results-summary"></div>
+        <div id="results-details"></div>
+      </section>
+
+      <section class="panel" id="resources" hidden>
+        <h2>Live resources</h2>
+        <p>Track public advisories that continue to update as new indicators are published:</p>
+        <ul id="resource-list"></ul>
+      </section>
+    </main>
+
+    <template id="match-template">
+      <article class="match">
+        <h3></h3>
+        <dl></dl>
+      </article>
+    </template>
+
+    <script src="app.js" type="module"></script>
+  </body>
+</html>

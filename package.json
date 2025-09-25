@@ -1,0 +1,23 @@
+{
+  "name": "shai-hulud-controller",
+  "version": "1.0.0",
+  "description": "Scan npm manifests for Shai-Hulud supply-chain IoCs",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo 'No automated tests yet'",
+    "scan": "node src/index.js",
+    "start": "node src/server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.1.0",
+    "multer": "^2.0.2",
+    "semver": "^7.7.2"
+  },
+  "bin": {
+    "shai-hulud-scan": "src/index.js"
+  }
+}
