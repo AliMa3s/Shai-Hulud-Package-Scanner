@@ -51,15 +51,57 @@ function buildDataset(entries) {
 }
 
 async function fetchDatasetFromUrl(url) {
-  const response = await fetch(url, { headers: { accept: 'application/json' } });
+  const response = await fetch(url, {
+    headers: {
+      accept: 'application/json, text/plain;q=0.9'
+    }
+  });
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}`);
   }
-  const payload = await response.json();
-  if (!Array.isArray(payload)) {
-    throw new Error('Dataset must be a JSON array.');
+  const raw = await response.text();
+  try {
+    const payload = JSON.parse(raw);
+    if (Array.isArray(payload)) {
+      return payload;
+    }
+  } catch (err) {
+    // Not JSON, fall back to colon-delimited parsing
   }
-  return payload;
+  const parsed = parseColonDelimitedDataset(raw);
+  if (parsed.length) {
+    return parsed;
+  }
+  throw new Error('Dataset must be a JSON array or colon-delimited list.');
+}
+
+
+function parseColonDelimitedDataset(text) {
+  if (typeof text !== 'string') return [];
+  const lines = text.split(/\r?\n/);
+  const map = new Map();
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) {
+      continue;
+    }
+    const colonIndex = trimmed.indexOf(':');
+    if (colonIndex === -1) {
+      continue;
+    }
+    const name = trimmed.slice(0, colonIndex).trim();
+    const version = trimmed.slice(colonIndex + 1).trim();
+    if (!name || !version) {
+      continue;
+    }
+    if (!map.has(name)) {
+      map.set(name, new Set());
+    }
+    map.get(name).add(version);
+  }
+  return Array.from(map.entries())
+    .map(([name, versions]) => ({ name, versions: Array.from(versions).sort() }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 function parseNpmAlias(spec) {
@@ -365,6 +407,7 @@ module.exports = {
   loadJsonFile,
   buildDataset,
   fetchDatasetFromUrl,
+  parseColonDelimitedDataset,
   parseNpmAlias,
   matchRangeAgainstVersions,
   evaluateManifestSpec,
