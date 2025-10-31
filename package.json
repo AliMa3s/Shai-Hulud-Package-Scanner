@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo 'No automated tests yet'",
     "scan": "node src/index.js",
+    "scan:project": "node src/project-scan.js",
     "start": "node src/server.js",
     "data:update": "node scripts/update-dataset.js"
   },

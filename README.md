@@ -2,7 +2,7 @@
 
 A Node.js toolkit that helps you spot indicators of compromise (IoCs) tied to the 2025 "Shai-Hulud" npm supply-chain attack. It now ships with both a command-line scanner and a lightweight UI so you can upload manifests or lockfiles directly from the browser and optionally follow a live JSON feed of compromised packages.
 
-> **Data source:** The bundled dataset in `data/compromised-packages.json` (snapshot dated 2025-09-30) consolidates 239 packages / 604 malicious versions pulled from StepSecurity, Wiz.io, Semgrep, JFrog, Socket.dev, and CISA advisories via the community-maintained [Cobenian/shai-hulud-detect](https://github.com/Cobenian/shai-hulud-detect) feed. At runtime we also fetch [`https://raw.githubusercontent.com/Cobenian/shai-hulud-detect/main/compromised-packages.txt`](https://raw.githubusercontent.com/Cobenian/shai-hulud-detect/main/compromised-packages.txt); the loader now accepts either that colon-delimited list or a JSON array and falls back to the bundled snapshot if the network request fails.
+> **Data source:** The bundled dataset in `data/compromised-packages.json` (snapshot dated 2025-09-30) consolidates 239 packages / 604 malicious versions pulled from StepSecurity, Wiz.io, Semgrep, JFrog, Socket.dev, and CISA advisories via the community-maintained [Cobenian/shai-hulud-detect](https://github.com/Cobenian/shai-hulud-detect) feed. Those totals track the upstream repository; if the feed grows, `npm run data:update` will pull the latest counts and rewrite the JSON snapshot. At runtime we also fetch [`https://raw.githubusercontent.com/Cobenian/shai-hulud-detect/main/compromised-packages.txt`](https://raw.githubusercontent.com/Cobenian/shai-hulud-detect/main/compromised-packages.txt); the loader now accepts either that colon-delimited list or a JSON array and falls back to the bundled snapshot if the network request fails.
 
 ## Web UI
 
@@ -40,6 +40,26 @@ node src/index.js --file path/to/package-lock.json --json
 
 The CLI exits with code `1` when it detects IoCs. Use `--data` to point at an alternate dataset file or URL for a one-off run.
 
+### Project-wide IoC sweep (new)
+
+Run a fuller sweep that borrows the highest-signal checks from [`Cobenian/shai-hulud-detect`](https://github.com/Cobenian/shai-hulud-detect):
+
+```bash
+npm run scan:project -- .
+# optional flags:
+#   --include-node-modules  (slower, but inspects installed packages too)
+#   --json                  emit structured JSON output
+```
+
+The project scanner still cross-references manifests/lockfiles against the compromised versions feed, but also:
+
+- flags known malicious workflow filenames (`.github/workflows/shai-hulud-workflow.yml`);
+- checks SHA-256 hashes of `*.js/ts/json` files against the published payload hashes;
+- spots suspicious `postinstall` scripts that try to `curl`, `wget`, invoke PowerShell, etc.;
+- surfaces references to the Shai-Hulud webhook GUID, `webhook.site` sinkholes, chalk/debug crypto-skimmer helpers, `npmjs.help`, and trufflehog exfiltration patterns.
+
+Exit codes mirror the legacy bash tool: `1` when any high-risk indicator is present, `2` for medium-risk-only findings, `0` otherwise.
+
 ## Dataset maintenance
 
 1. Run `npm run data:update` to regenerate `data/compromised-packages.json` from the upstream feed (pass an alternate URL or file path with `npm run data:update -- <source>` when needed).
@@ -49,10 +69,10 @@ The `GET /api/dataset` endpoint exposes the bundled list if you want to diff you
 
 ## Output interpretation
 
-- **manifest-range** – Your manifest declares a range that overlaps malicious versions. Pin or exclude the affected releases before rebuilding.
-- **manifest-exact** – Your manifest explicitly pins a compromised version.
-- **manifest-name-only** – Your manifest references an affected package without a resolvable selector (e.g., alias). Manually verify the version in use.
-- **lock-installed** – The lockfile shows a malicious version is already installed. Treat the environment as compromised: rotate secrets, reinstall from a clean machine, and redeploy.
+- **manifest-range** ï¿½ Your manifest declares a range that overlaps malicious versions. Pin or exclude the affected releases before rebuilding.
+- **manifest-exact** ï¿½ Your manifest explicitly pins a compromised version.
+- **manifest-name-only** ï¿½ Your manifest references an affected package without a resolvable selector (e.g., alias). Manually verify the version in use.
+- **lock-installed** ï¿½ The lockfile shows a malicious version is already installed. Treat the environment as compromised: rotate secrets, reinstall from a clean machine, and redeploy.
 
 ## Helpful links
 
